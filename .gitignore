@@ -161,3 +161,9 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+#############
+## Eclipse Development
+#############
+geoportal/www/WEB-INF/classes/
+geoportal/www/WEB-INF/lib/
