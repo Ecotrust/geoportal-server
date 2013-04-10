@@ -90,6 +90,17 @@
                   <xsl:text>&#x2715;</xsl:text>
                 </xsl:for-each>
               </Types>
+              <Links>
+                <Link label="catalog.property.customLink.label.esri.csv">
+                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.csv']"/>
+                </Link>
+                <Link label="catalog.property.customLink.label.esri.wms">
+                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.wms']"/>
+                </Link>
+                <Link label="catalog.property.customLink.label.esri.zip">
+                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.zip']"/>
+                </Link>
+              </Links>
         </Record>
       </xsl:for-each>
 
