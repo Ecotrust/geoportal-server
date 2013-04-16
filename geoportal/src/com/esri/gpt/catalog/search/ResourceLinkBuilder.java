@@ -753,7 +753,17 @@ protected void buildCustomLinks(SearchXslRecord xRecord,
       String url = iter2.next();
       url = this.checkUrl(url);
       if (url.length() > 0) {
-        ResourceLink link = this.makeLink(url, ResourceLink.TAG_CUSTOM, label);
+        String resLink;
+        if (label.equals("catalog.property.customLink.label.esri.csv")) {
+            resLink = ResourceLink.TAG_CSV;
+        } else if (label.equals("catalog.property.customLink.label.esri.zip")) {
+            resLink = ResourceLink.TAG_ZIP;
+        } else if (label.equals("catalog.property.customLink.label.esri.wms")) {
+            resLink = ResourceLink.TAG_WMS;
+        } else {
+            resLink = ResourceLink.TAG_CUSTOM;
+        }
+        ResourceLink link = this.makeLink(url, resLink, label);
         record.getResourceLinks().add(link);
         makeAddToMapFromFactory(url, null, label, record);
       }

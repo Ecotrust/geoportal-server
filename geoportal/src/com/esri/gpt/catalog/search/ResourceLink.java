@@ -62,6 +62,15 @@ public class ResourceLink {
   /** Custom link tag = "customLink" **/
   public static final String TAG_CUSTOM = "customLink";
   
+  /** ZIP tag = "ZIP" **/
+  public static final String TAG_ZIP = "ZIP";
+  
+  /** WMS tag = "WMS" **/
+  public static final String TAG_WMS = "WMS";
+  
+  /** CSV tag = "CSV" **/
+  public static final String TAG_CSV = "CSV";
+  
   /** Zoom link.  Used in JSF.  link tag = "zoomTo" **/
   public static final String TAG_ZOOMTO = "zoomTo";
   
