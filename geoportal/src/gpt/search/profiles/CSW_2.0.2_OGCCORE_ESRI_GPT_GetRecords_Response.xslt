@@ -60,47 +60,83 @@
           <xsl:value-of select="ows:WGS84BoundingBox/ows:UpperCorner"/>
           </UpperCorner>
           <MaxX>
-                <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
-              </MaxX>
-              <MaxY>
-                <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
-              </MaxY>
-              <MinX>
-                <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
-              </MinX>
-              <MinY>
-                <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
-              </MinY>
-              <ModifiedDate>
-                <xsl:value-of select="./dct:modified"/>
-              </ModifiedDate>
-              <References>
-                <xsl:for-each select="./dct:references">
-                  <xsl:value-of select="."/>
-                  <xsl:text>&#x2714;</xsl:text>
-                  <xsl:value-of select="@scheme"/>
-                  <xsl:text>&#x2715;</xsl:text>
-                </xsl:for-each>
-              </References>
-              <Types>
-                <xsl:for-each select="./dc:type">
-                  <xsl:value-of select="."/>
-                  <xsl:text>&#x2714;</xsl:text>
-                  <xsl:value-of select="@scheme"/>
-                  <xsl:text>&#x2715;</xsl:text>
-                </xsl:for-each>
-              </Types>
-              <Links>
-                <Link label="catalog.property.customLink.label.esri.csv">
-                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.csv']"/>
-                </Link>
-                <Link label="catalog.property.customLink.label.esri.wms">
-                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.wms']"/>
-                </Link>
-                <Link label="catalog.property.customLink.label.esri.zip">
-                  <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.zip']"/>
-                </Link>
-              </Links>
+            <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
+          </MaxX>
+          <MaxY>
+            <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
+          </MaxY>
+          <MinX>
+            <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
+          </MinX>
+          <MinY>
+            <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
+          </MinY>
+          <ModifiedDate>
+            <xsl:value-of select="./dct:modified"/>
+          </ModifiedDate>
+          <References>
+            <xsl:for-each select="./dct:references">
+              <xsl:value-of select="."/>
+              <xsl:text>&#x2714;</xsl:text>
+              <xsl:value-of select="@scheme"/>
+              <xsl:text>&#x2715;</xsl:text>
+            </xsl:for-each>
+          </References>
+          <Types>
+            <xsl:for-each select="./dc:type">
+              <xsl:value-of select="."/>
+              <xsl:text>&#x2714;</xsl:text>
+              <xsl:value-of select="@scheme"/>
+              <xsl:text>&#x2715;</xsl:text>
+            </xsl:for-each>
+          </Types>
+          <Links>
+            <Link label="catalog.property.customLink.label.esri.csv">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.csv']"/>
+            </Link>
+            <Link label="catalog.property.customLink.label.esri.wms">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.wms']"/>
+            </Link>
+            <Link label="catalog.property.customLink.label.esri.zip">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Gmd:URL.zip']"/>
+            </Link>
+
+            <Link label="catalog.property.customLink.label.esri.networkr_ftp">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:Networkr_ftp']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.networkr_zip">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:networkr_zip']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.onlink_wms">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_wms']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.onlink_img">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_img']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.onlink_pdf">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_pdf']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.onlink_kml">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_kml']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.onlink_zip">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_zip']"/>
+            </Link>
+            
+            <Link label="catalog.property.customLink.label.esri.onlink_tar">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:onlink_tar']"/>
+            </Link>
+
+			<Link label="catalog.property.customLink.label.esri.esri_wms">
+              <xsl:value-of select="./dct:references[@scheme='urn:x-esri:specification:ServiceType:esri_wms']"/>
+            </Link>
+          </Links>
         </Record>
       </xsl:for-each>
 

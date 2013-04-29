@@ -36,7 +36,25 @@
      xpath="/metadata/Esri/primaryOnlink"/>
   <property meaning="resource.check.urls" xpathType="NODESET"
      xpath="/metadata/distinfo/stdorder/digform/digtopt/onlinopt/computer/networka/networkr"/>
-       
+  <property meaning="networkr_ftp" xpathType="NODESET"
+     xpath="/metadata/distinfo/stdorder/digform/digtopt/onlinopt/computer/networka/networkr[contains(.,'ftp')]"/>
+  <property meaning="networkr_zip" xpathType="NODESET"
+     xpath="/metadata/distinfo/stdorder/digform/digtopt/onlinopt/computer/networka/networkr[contains(.,'zip')]"/>
+  <property meaning="onlink_wms" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'wmsconnector')]"/>
+  <property meaning="onlink_img" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'img')]"/>
+  <property meaning="onlink_pdf" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'pdf')]"/>
+  <property meaning="onlink_kml" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'kml')]"/>
+  <property meaning="onlink_zip" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'zip')]"/>
+  <property meaning="onlink_tar" xpathType="NODESET"
+     xpath="/metadata/idinfo/citation/citeinfo/onlink[contains(.,'tar.gz')]"/>
+  <property meaning="esri_wms" xpathType="NODESET"
+     xpath="/metadata/Esri/Server[contains(.,'wmsconnector')]"/>
+            
   <property meaning="thumbnail.url" xpath="/metadata/idinfo/browse/browsen"/>
     
   <property meaning="contentType" xpath="/metadata/distinfo/resdesc"/>

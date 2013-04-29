@@ -60,36 +60,36 @@
           <xsl:value-of select="ows:WGS84BoundingBox/ows:UpperCorner"/>
           </UpperCorner>
           <MaxX>
-                <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
-              </MaxX>
-              <MaxY>
-                <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
-              </MaxY>
-              <MinX>
-                <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
-              </MinX>
-              <MinY>
-                <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
-              </MinY>
-              <ModifiedDate>
-                <xsl:value-of select="./dct:modified"/>
-              </ModifiedDate>
-              <References>
-                <xsl:for-each select="./dct:references">
-                  <xsl:value-of select="."/>
-                  <xsl:text>&#x2714;</xsl:text>
-                  <xsl:value-of select="@scheme"/>
-                  <xsl:text>&#x2715;</xsl:text>
-                </xsl:for-each>
-              </References>
-              <Types>
-                <xsl:for-each select="./dc:type">
-                  <xsl:value-of select="."/>
-                  <xsl:text>&#x2714;</xsl:text>
-                  <xsl:value-of select="@scheme"/>
-                  <xsl:text>&#x2715;</xsl:text>
-                </xsl:for-each>
-              </Types>
+            <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
+          </MaxX>
+          <MaxY>
+            <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:UpperCorner, ' '))"/>
+          </MaxY>
+          <MinX>
+            <xsl:value-of select="normalize-space(substring-before(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
+          </MinX>
+          <MinY>
+            <xsl:value-of select="normalize-space(substring-after(ows:WGS84BoundingBox/ows:LowerCorner, ' '))"/>
+          </MinY>
+          <ModifiedDate>
+            <xsl:value-of select="./dct:modified"/>
+          </ModifiedDate>
+          <References>
+            <xsl:for-each select="./dct:references">
+              <xsl:value-of select="."/>
+              <xsl:text>&#x2714;</xsl:text>
+              <xsl:value-of select="@scheme"/>
+              <xsl:text>&#x2715;</xsl:text>
+            </xsl:for-each>
+          </References>
+          <Types>
+            <xsl:for-each select="./dc:type">
+              <xsl:value-of select="."/>
+              <xsl:text>&#x2714;</xsl:text>
+              <xsl:value-of select="@scheme"/>
+              <xsl:text>&#x2715;</xsl:text>
+            </xsl:for-each>
+          </Types>
         </Record>
       </xsl:for-each>
 
