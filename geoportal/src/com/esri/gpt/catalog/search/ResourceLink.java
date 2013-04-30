@@ -68,6 +68,9 @@ public class ResourceLink {
   /** WMS tag = "WMS" **/
   public static final String TAG_WMS = "WMS";
   
+  /** WMS_ONLY tag = "WMSONLY" for WMS links with no parameters **/
+  public static final String TAG_WMS_ONLY = "WMSONLY";
+  
   /** CSV tag = "CSV" **/
   public static final String TAG_CSV = "CSV";
   

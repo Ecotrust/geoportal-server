@@ -777,7 +777,7 @@ protected void buildCustomLinks(SearchXslRecord xRecord,
         } else if (label.equals("catalog.property.customLink.label.esri.onlink_tar")) {
             resLink = ResourceLink.TAG_TAR;
         } else if (label.equals("catalog.property.customLink.label.esri.esri_wms")) {
-            resLink = ResourceLink.TAG_WMS;
+            resLink = ResourceLink.TAG_WMS_ONLY;
         } else {
             resLink = ResourceLink.TAG_CUSTOM;
         }
