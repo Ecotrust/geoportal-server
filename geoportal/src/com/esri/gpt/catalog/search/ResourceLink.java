@@ -71,6 +71,21 @@ public class ResourceLink {
   /** CSV tag = "CSV" **/
   public static final String TAG_CSV = "CSV";
   
+  /** FTP tag = "FTP" **/
+  public static final String TAG_FTP = "FTP";
+  
+  /** IMG tag = "IMG" **/
+  public static final String TAG_IMG = "IMG";
+  
+  /** PDF tag = "PDF" **/
+  public static final String TAG_PDF = "PDF";
+  
+  /** KML tag = "KML" **/
+  public static final String TAG_KML = "KML";
+  
+  /** TAR tag = "TAR" **/
+  public static final String TAG_TAR = "TAR";
+  
   /** Zoom link.  Used in JSF.  link tag = "zoomTo" **/
   public static final String TAG_ZOOMTO = "zoomTo";
   

@@ -760,6 +760,24 @@ protected void buildCustomLinks(SearchXslRecord xRecord,
             resLink = ResourceLink.TAG_ZIP;
         } else if (label.equals("catalog.property.customLink.label.esri.wms")) {
             resLink = ResourceLink.TAG_WMS;
+        } else if (label.equals("catalog.property.customLink.label.esri.networkr_ftp")) {
+            resLink = ResourceLink.TAG_FTP;
+        } else if (label.equals("catalog.property.customLink.label.esri.networkr_zip")) {
+            resLink = ResourceLink.TAG_ZIP;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_wms")) {
+            resLink = ResourceLink.TAG_WMS;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_img")) {
+            resLink = ResourceLink.TAG_IMG;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_pdf")) {
+            resLink = ResourceLink.TAG_PDF;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_kml")) {
+            resLink = ResourceLink.TAG_KML;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_zip")) {
+            resLink = ResourceLink.TAG_ZIP;
+        } else if (label.equals("catalog.property.customLink.label.esri.onlink_tar")) {
+            resLink = ResourceLink.TAG_TAR;
+        } else if (label.equals("catalog.property.customLink.label.esri.esri_wms")) {
+            resLink = ResourceLink.TAG_WMS;
         } else {
             resLink = ResourceLink.TAG_CUSTOM;
         }
