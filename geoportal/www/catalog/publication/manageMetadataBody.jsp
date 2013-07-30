@@ -848,7 +848,7 @@ function mmdClearAclSelection(){
       title="#{gptMsg['catalog.harvest.manage.action.harvest.cancel.tip']}"
       url="/catalog/images/mr_fullharvest_cancel.gif"
       onclick="mmdOnActionIconClicked('cancel','#{record.uuid}');"/>
-    <h:graphicImage rendered="#{record.protocol ne null}"
+    <h:graphicImage rendered="#{record.protocol ne null and record.protocol.kind!='AGP2AGP'}"
       alt="#{gptMsg['catalog.publication.manageMetadata.action.showharvested.tip']}"
       title="#{gptMsg['catalog.publication.manageMetadata.action.showharvested.tip']}"
       url="/catalog/images/mmd_showharvested.gif"
@@ -872,7 +872,7 @@ function mmdClearAclSelection(){
         <f:attribute name="defaultDirection" value="asc"/>
       </h:commandLink>
     </f:facet>
-    <h:outputText value="#{record.title}"/>
+    <h:outputLabel for="mmdCheckRecord" value="#{record.title}"/>
   </h:column>
 
   <% // document owner %>

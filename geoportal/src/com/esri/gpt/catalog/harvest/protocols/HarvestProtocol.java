@@ -44,7 +44,13 @@ public abstract class HarvestProtocol implements Protocol, Serializable {
   private long flags;
   /** destinations */
   private List<String> destinations;
-// constructors ================================================================
+  /** ad-hoc */
+  private String addHoc = "";
+
+  // constructors ================================================================
+  public HarvestProtocol() {
+  }
+  
 // properties ==================================================================
   
   /**
@@ -199,6 +205,16 @@ public abstract class HarvestProtocol implements Protocol, Serializable {
     setAttributeMap(attributeMap);
   }
 
+  @Override
+  public String getAdHoc() {
+    return addHoc;
+  }
+
+  @Override
+  public void setAdHoc(String adHoc) {
+    this.addHoc = Val.chkStr(adHoc);
+  }
+
   /**
    * Decrypts string.
    * @param s string to decrypt
@@ -266,7 +282,9 @@ public abstract class HarvestProtocol implements Protocol, Serializable {
     RES("RES"),
     /* ArcGIS Portal */
     /* NOTE! This is EXPERIMENTAL feature. It might be removed at any time in the future. */
-    AGP("AGP");
+    AGP("AGP"),
+    /** Atom */
+    ATOM("ATOM");
     /** protocol id */
     private String _id;
 

@@ -15,6 +15,7 @@
 package com.esri.gpt.control.harvest;
 
 import com.esri.gpt.catalog.harvest.protocols.HarvestProtocol.ProtocolType;
+import com.esri.gpt.catalog.harvest.protocols.HarvestProtocolAgp2Agp;
 import com.esri.gpt.catalog.harvest.protocols.HarvestProtocolResource;
 import com.esri.gpt.catalog.harvest.protocols.HarvestProtocolArcIms;
 import com.esri.gpt.catalog.harvest.protocols.HarvestProtocolCsw;
@@ -49,6 +50,7 @@ public class HarvestEditor {
 // class variables =============================================================
 /** CSW profiles manager */
 private static CswProfilesManager _cswProfilesManager = new CswProfilesManager();
+private static final String HOST_NAME_REGEX = "(^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])([/].+)?$)|(^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])([/].+)?$)";
 
 // instance variables ==========================================================
   
@@ -68,6 +70,11 @@ private TreeMap<String,Protocol> protocols = new TreeMap<String,Protocol>(String
   }
 }
 
+private boolean arcgisDotComAllowed;
+private boolean crossAllowed;
+
+private FrequencyMode frequencyMode = FrequencyMode.PERIODICAL;
+
 // constructors ================================================================
 /**
  * Creates instance of editor.
@@ -76,8 +83,35 @@ private TreeMap<String,Protocol> protocols = new TreeMap<String,Protocol>(String
 public HarvestEditor(HrRecord harvestRepository) {
   _harvestRepository = harvestRepository;
   protocols.put(harvestRepository.getProtocol().getKind(), harvestRepository.getProtocol());
+  
+  ApplicationContext appCtx = ApplicationContext.getInstance();
+  ApplicationConfiguration appCfg = appCtx.getConfiguration();
+    
+  String sArcgisDotComAllowed = appCfg.getCatalogConfiguration().getParameters().getValue("webharvester.agp2agp.arcgisDotCom.allowed");
+  this.arcgisDotComAllowed = Val.chkBool(sArcgisDotComAllowed, false);
+
+
+  String sCrossAllowed = appCfg.getCatalogConfiguration().getParameters().getValue("webharvester.agp2agp.sameDomain.allowed");
+  this.crossAllowed = Val.chkBool(sCrossAllowed, false);
 }
+
 // properties ==================================================================
+public boolean getArcgisDotComAllowed() {
+  return arcgisDotComAllowed;
+}
+
+public void setArcgisDotComAllowed(boolean arcgisDotComAllowed) {
+  this.arcgisDotComAllowed = arcgisDotComAllowed;
+}
+
+public boolean getCrossAllowed() {
+  return crossAllowed;
+}
+
+public void setCrossAllowed(boolean crossAllowed) {
+  this.crossAllowed = crossAllowed;
+}
+
 /**
  * Gets edited repository.
  * @return edited repository
@@ -113,6 +147,9 @@ public Map<String,String> getAttrs() {
       public String get(Object key) {
         StringAttributeMap map = _harvestRepository.getProtocol().getAttributeMap();
         String value = map.getValue(key.toString());
+        if ("src-m".equals(key) && Val.chkStr(value).isEmpty()) {
+          value = HarvestProtocolAgp2Agp.getAgp2AgpMaxItems().toString();
+        }
         return Val.chkStr(value);
       }
 
@@ -363,6 +400,32 @@ public void setApprovalStatus(String status) {
 // methods =====================================================================
 
 /**
+ * Prepares repository for edit.
+ */
+public void prepareForEdit() {
+  switch (getRepository().getHarvestFrequency()) {
+    case AdHoc:
+      setFrequencyMode(FrequencyMode.ADHOC);
+      getRepository().setHarvestFrequency(HrRecord.HarvestFrequency.Skip);
+      break;
+    default:
+      setFrequencyMode(FrequencyMode.PERIODICAL);
+      getRepository().clearAdHocEventList();
+  }
+}
+
+/**
+ * Prepares repository for update.
+ */
+public void prepareForUpdate() {
+  if (getFrequencyMode()== FrequencyMode.ADHOC) {
+    getRepository().setHarvestFrequency(HrRecord.HarvestFrequency.AdHoc);
+  } else {
+    getRepository().clearAdHocEventList();
+  }
+}
+
+/**
  * Validates entered content.
  * @param mb message broker
  * @return <code>true</code> if data is valid
@@ -407,6 +470,72 @@ public boolean validate(MessageBroker mb) {
       mb.addErrorMessage("catalog.harvest.manage.edit.err.soapUrl");
       _valid = false;
     }
+  } else if (kind.equalsIgnoreCase("agp2agp")) {
+    HarvestProtocolAgp2Agp p = (HarvestProtocolAgp2Agp) protocols.get("agp2agp");
+    if (p!=null) {
+      if (!getArcgisDotComAllowed()) {
+        if ( p.getDestinationHost().toLowerCase().endsWith("arcgis.com") || p.getDestinationHost().toLowerCase().endsWith("arcgisonline.com")) {
+          mb.addErrorMessage("catalog.harvest.manage.test.msg.agp2agp.arcgis.forbiden");
+          _valid = false;
+        }
+      } else if (!getCrossAllowed()) {
+        String srcHost[] = p.getSourceHost().split("[.]");
+        String dstHost[] = p.getDestinationHost().split("[.]");
+
+        if (srcHost!=null && srcHost.length>=2 && dstHost!=null && dstHost.length>=2) {
+          if (srcHost[srcHost.length-1].equalsIgnoreCase(dstHost[dstHost.length-1]) && srcHost[srcHost.length-2].equalsIgnoreCase(dstHost[dstHost.length-2])) {
+            mb.addErrorMessage("catalog.harvest.manage.test.msg.agp2agp.cross.forbiden");
+            _valid = false;
+          }
+        }
+      }
+      if (_valid) {
+        if (!p.getSourceHost().matches(HOST_NAME_REGEX)) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.h.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("src-q").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.q.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("src-m").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.m.err");
+          _valid = false;
+        } else if (Val.chkLong(p.getAttributeMap().getValue("src-m"), 0)<=0 || Val.chkLong(p.getAttributeMap().getValue("src-m"), 0)>HarvestProtocolAgp2Agp.getAgp2AgpMaxItems()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.m.err.less", new Object[]{HarvestProtocolAgp2Agp.getAgp2AgpMaxItems()});
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("src-u").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.u.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("src-p").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.src.p.err");
+          _valid = false;
+        }
+
+        if (!p.getDestinationHost().matches(HOST_NAME_REGEX)) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.dest.h.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("dest-o").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.dest.o.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("dest-u").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.dest.u.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("dest-p").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.dest.p.err");
+          _valid = false;
+        }
+        if (p.getAttributeMap().getValue("dest-f").isEmpty()) {
+          mb.addErrorMessage("catalog.harvest.manage.edit.dest.f.err");
+          _valid = false;
+        }
+      }
+    }
   }
   
   return _valid;
@@ -419,5 +548,49 @@ public boolean validate(MessageBroker mb) {
 @Override
 public String toString() {
   return _harvestRepository.toString();
+}
+
+public FrequencyMode getFrequencyMode() {
+  return frequencyMode;
+}
+
+public void setFrequencyMode(FrequencyMode frequencyMode) {
+  this.frequencyMode = frequencyMode;
+}
+
+public String getFrequencyModeAsString() {
+  return frequencyMode.name();
+}
+
+public void setFrequencyModeAsString(String frequencyMode) {
+  frequencyMode = Val.chkStr(frequencyMode);
+  try {
+    this.frequencyMode = FrequencyMode.valueOf(frequencyMode.toUpperCase());
+  } catch (IllegalArgumentException ex) {
+    this.frequencyMode = FrequencyMode.PERIODICAL;
+  }
+}
+
+/**
+ * Gets time codes.
+ *
+ * @return time codes.
+ */
+public String getTimeCodes() {
+  return _harvestRepository.getProtocol().getAdHoc();
+}
+
+/**
+ * Sets time codes.
+ *
+ * @param timeCodes time codes
+ */
+public void setTimeCodes(String timeCodes) {
+  _harvestRepository.getProtocol().setAdHoc(timeCodes);
+}
+
+public static enum FrequencyMode {
+  PERIODICAL,
+  ADHOC
 }
 }

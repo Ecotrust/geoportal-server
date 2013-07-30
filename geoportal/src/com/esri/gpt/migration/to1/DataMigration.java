@@ -614,8 +614,7 @@ public class DataMigration {
 						int owner = fromRs.getInt("owner");
 						String xml = "";
 						if (mds) {
-							xml = fetchMetadata(parameters, pstmt, docuuid, owner, fromRs
-									.getInt("userid"));
+							xml = fetchMetadata(parameters, pstmt, docuuid, owner);
 						} else {
 							owner = getNewUserId(owner, fromTablePrefix, fromConn,
 									toTablePrefix, toConn);
@@ -718,20 +717,20 @@ public class DataMigration {
 	/**
 	 * Fetch metadata xml from Metadata server
 	 * 
-	 * @param parameters
-	 * @param pstmt
-	 * @param docuuid
-	 * @param owner
-	 * @param userid
-	 * @return
-	 * @throws Exception
+	 * @param parameters parameters
+	 * @param pstmt prepared statement
+	 * @param docuuid document UUID
+	 * @param owner owner id
+	 * @return metadata document
+	 * @throws Exception if fetching metadata fails
 	 */
 	private String fetchMetadata(HashMap<String, Object> parameters,
-			PreparedStatement pstmt, String docuuid, int owner, int userid)
+			PreparedStatement pstmt, String docuuid, int owner)
 			throws Exception {
 
 		PreparedStatement selectIdStmt = null;
 		String xml = "";
+		int userid = -1;
 		try {
 			Connection toConn = (Connection) parameters.get("toConn");
 			Connection fromConn = (Connection) parameters.get("fromConn");
@@ -758,6 +757,7 @@ public class DataMigration {
 				selectStmt.setString(1, userName);
 				ResultSet user = selectStmt.executeQuery();
 				if (user.next()) {
+					userid = user.getInt("userid");
 					userid = getNewUserId(userid, fromTablePrefix, fromConn,
 							toTablePrefix, toConn);
 					if (!exists(toConn, userName, toTablePrefix + "user", "username",
@@ -778,6 +778,8 @@ public class DataMigration {
 				closeStatement(selectStmt);
 				selectStmt = null;
 
+				if(userid == -1) throw new Exception("Userid match not found in GPT_" + metadataTableName + "u table for owner: " + owner);
+				
 				pstmt.setInt(3, userid);
 				pstmt.setTimestamp(4, arcxmlRequest.getUpdateDate());
 			}
@@ -796,7 +798,7 @@ public class DataMigration {
 	 * @param fromConn
 	 * @param toTablePrefix
 	 * @param toConn
-	 * @return
+	 * @return new user id
 	 * @throws SQLException
 	 */
 	private int getNewUserId(int oldUserId, String fromTablePrefix,
@@ -851,7 +853,7 @@ public class DataMigration {
 	 * @param fromConn
 	 * @param fromTablePrefix
 	 * @param tableName
-	 * @return
+	 * @return count of migration records
 	 * @throws SQLException
 	 */
 	private int countMigrationRecords(Connection fromConn,
@@ -901,7 +903,7 @@ public class DataMigration {
 	 * 
 	 * @param pattern
 	 * @param value
-	 * @return
+	 * @return custom format
 	 */
 	private String customFormat(String pattern, double value) {
 		DecimalFormat myFormatter = new DecimalFormat(pattern);

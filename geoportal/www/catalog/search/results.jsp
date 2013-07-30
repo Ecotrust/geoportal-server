@@ -357,8 +357,8 @@ function rsGetQualityOfService() {
           + "&id=" + encodeURIComponent(uuid)
           ;
         var infoUrl = 
-          serviceCheckerInfoUrl
-          + "?serviceType=" + encodeURIComponent(type)
+          serviceCheckerInfoUrl + "?auth=" + serviceCheckerToken
+          + "&serviceType=" + encodeURIComponent(type)
           + "&uId=" + encodeURIComponent(uuid)
         var context = {
           node: node,
@@ -570,6 +570,7 @@ function rsGetQualityOfService() {
 				<h:panelGroup>
 				  <h:graphicImage id="smallImgContentType" 
 				    height="16px" width="16px" 
+				    alt="#{record.contentTypeLink.label}"
 				    value="#{record.contentTypeLink.url}" 
 				    title="#{record.contentTypeLink.label}"
 				    onmouseover="javascript:this.style.cursor='pointer';"

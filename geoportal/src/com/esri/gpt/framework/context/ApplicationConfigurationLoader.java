@@ -14,13 +14,16 @@
  */
 package com.esri.gpt.framework.context;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -31,6 +34,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.esri.gpt.catalog.arcims.ImsService;
 import com.esri.gpt.catalog.context.CatalogConfiguration;
@@ -42,6 +46,9 @@ import com.esri.gpt.catalog.search.MapViewerConfigs;
 import com.esri.gpt.catalog.search.SearchConfig;
 import com.esri.gpt.control.download.DownloadConfiguration;
 import com.esri.gpt.control.download.ItemInfo;
+import com.esri.gpt.control.georss.DcatField;
+import com.esri.gpt.control.georss.DcatFields;
+import com.esri.gpt.control.georss.DcatSchemas;
 import com.esri.gpt.control.webharvest.engine.DataProcessorFactory;
 import com.esri.gpt.control.webharvest.engine.HarvesterConfiguration;
 import com.esri.gpt.control.webharvest.engine.LocalDataProcessorFactory;
@@ -76,7 +83,6 @@ import com.esri.gpt.framework.util.TimePeriod;
 import com.esri.gpt.framework.util.Val;
 import com.esri.gpt.framework.xml.DomUtil;
 import com.esri.gpt.framework.xml.NodeListAdapter;
-import java.util.List;
 
 /**
  * Application configuration loader.
@@ -91,6 +97,8 @@ public class ApplicationConfigurationLoader {
   
 /** Main XML configuration file location. */
 private static final String MAIN_FILE = "gpt/config/gpt.xml";
+
+private static final String MAIN_FILE_DEV = "gpt/config/gpt_dev.xml";
 
 /** Default constructor. */
 public ApplicationConfigurationLoader() {
@@ -117,10 +125,22 @@ private Logger getLogger() {
 public void load(ApplicationConfiguration appConfig) throws Exception {
 
   // load the dom
-  String sConfigFile = MAIN_FILE;
-  getLogger().log(Level.FINE, "Loading configuration file: {0}", sConfigFile);
-  Document dom = DomUtil.makeDomFromResourcePath(sConfigFile, false);
+	String sConfigFile = null;
+	Document dom = null;
+	try {
+		sConfigFile = MAIN_FILE_DEV;
+		dom = DomUtil.makeDomFromResourcePath(sConfigFile, false);
+		getLogger().log(Level.FINE, "Loaded configuration file: {0}", sConfigFile);
+	} catch (Throwable e) {
+    // Dev config not found
+	}
+	if (dom == null) {
+		sConfigFile = MAIN_FILE;
+		getLogger().log(Level.FINE, "Loading configuration file: {0}", sConfigFile);
+		dom = DomUtil.makeDomFromResourcePath(sConfigFile, false);
+	}
   XPath xpath = XPathFactory.newInstance().newXPath();
+
 
   try {
     Node root = (Node) xpath.evaluate("/gptConfig", dom, XPathConstants.NODE);
@@ -177,7 +197,12 @@ public void load(ApplicationConfiguration appConfig) throws Exception {
     e.printStackTrace(System.err);
   }
 
-  getLogger().info(appConfig.toString());
+  StringAttributeMap params = appConfig.getCatalogConfiguration().getParameters();
+  String param = Val.chkStr(params.getValue("catalog.echoConfigOnStartup"));
+  boolean bEchoConfig = !param.equalsIgnoreCase("false");
+  if (bEchoConfig) {
+  	getLogger().info(appConfig.toString());
+  }
 }
 
 /**
@@ -215,6 +240,11 @@ private void loadCatalog(ApplicationConfiguration appConfig, Document dom,
 
     // additional parameters
     populateParameters(cfg.getParameters(), ndCat);
+    
+    //load dcat fields
+    if(cfg.getParameters().containsKey("dcat.mappings")){
+    	loadDcatMappings(cfg.getDcatSchemas(),cfg.getParameters().get("dcat.mappings").getValue());
+    }
     
     // parse http timeouts
     String connectionTimeout = cfg.getParameters().getValue("httpClientRequest.connectionTimeout");
@@ -390,6 +420,49 @@ private void loadCatalog(ApplicationConfiguration appConfig, Document dom,
 
   loadMetadataAccessPolicyConfiguration(appConfig, root);
 
+  StringAttributeMap params = appConfig.getCatalogConfiguration().getParameters();
+  String param = Val.chkStr(params.getValue("catalog.loadSchemasOnStartup"));
+  boolean bLoadSchemas = param.equalsIgnoreCase("true");
+  if (bLoadSchemas) {
+  	appConfig.getCatalogConfiguration().getConfiguredSchemas();
+  }
+}
+
+/**
+ * Load configured dcat mappings 
+ * @param dcatSchemas the configured dcat schemas
+ * @param dcatMappings the path to dcat mapping file
+ * @throws IOException 
+ * @throws SAXException 
+ * @throws ParserConfigurationException 
+ */
+private void loadDcatMappings(DcatSchemas dcatSchemas, String dcatMappings) throws Exception {
+	getLogger().log(Level.FINE, "Loading dcat mapping file: {0}", dcatMappings);
+	Document dom = DomUtil.makeDomFromResourcePath(dcatMappings, false);
+	XPath xpath = XPathFactory.newInstance().newXPath();
+	Node dcat = (Node) xpath.evaluate("/dcat", dom, XPathConstants.NODE);
+	NodeList fields = (NodeList) xpath.evaluate("fields", dcat, XPathConstants.NODESET);
+	if(fields != null){		
+		for (int j = 0; j < fields.getLength(); j++) {	  
+	  	Node fld = fields.item(j);
+	  	DcatFields dcatFields = new DcatFields();
+	  	String schema = xpath.evaluate("@schema", fld);
+	  	NodeList flds = (NodeList) xpath.evaluate("field", fld, XPathConstants.NODESET);
+	  	for (int i = 0; i < flds.getLength(); i++) {
+	  		Node field = flds.item(i);
+	  		DcatField df = new DcatField();
+	  		String name = xpath.evaluate("@name", field);
+	  		df.setName(name);
+	  		df.setIndex(xpath.evaluate("@index", field));	 	  		
+	  		String isDate = xpath.evaluate("@isDate", field);
+				if(isDate.length()  > 0){
+					df.setDate(Boolean.parseBoolean(isDate));
+				}  			  		
+	  		dcatFields.add(df);
+	  	}
+	  	dcatSchemas.put(schema, dcatFields);
+	  }
+	}
 }
 
 /**
@@ -1122,7 +1195,8 @@ private void loadProtocolFactories(ApplicationConfiguration appConfig, Document 
         Class fc = Class.forName(factoryClass);
         ProtocolFactory factory = (ProtocolFactory) fc.newInstance();
         ProtocolInitializer.init(factory, ndProto);
-        factories.put(factory.getName(), factory);
+        String resourceKey = Val.chkStr((String) xpath.evaluate("@resourceKey", ndProto, XPathConstants.STRING));
+        factories.put(factory.getName(), factory, resourceKey);
       } catch (Exception ex) {
         getLogger().log(Level.WARNING, "Error loading protocol: "+factoryClass, ex);
       }

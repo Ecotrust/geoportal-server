@@ -15,6 +15,7 @@
 package com.esri.gpt.control.webharvest.engine;
 
 import com.esri.gpt.catalog.arcims.ImsServiceException;
+import com.esri.gpt.catalog.context.CatalogIndexException;
 import com.esri.gpt.catalog.harvest.history.HeRecord;
 import com.esri.gpt.catalog.harvest.history.HeUpdateReportRequest;
 import com.esri.gpt.catalog.harvest.history.HeUpdateRequest;
@@ -29,6 +30,7 @@ import com.esri.gpt.control.webharvest.protocol.ProtocolInvoker;
 import com.esri.gpt.framework.context.ApplicationConfiguration;
 import com.esri.gpt.framework.context.ApplicationContext;
 import com.esri.gpt.framework.context.RequestContext;
+import com.esri.gpt.framework.http.HttpClientException;
 import com.esri.gpt.framework.jsf.MessageBroker;
 import com.esri.gpt.framework.mail.MailRequest;
 import com.esri.gpt.framework.resource.api.Native;
@@ -41,12 +43,16 @@ import com.esri.gpt.framework.security.identity.local.LocalDao;
 import com.esri.gpt.framework.security.principal.*;
 import com.esri.gpt.framework.util.Val;
 import com.esri.gpt.framework.xml.XsltTemplate;
+import com.esri.gpt.server.csw.client.NullReferenceException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import org.xml.sax.SAXException;
 
@@ -105,11 +111,13 @@ class LocalDataProcessor implements DataProcessor {
     // create request context
     RequestContext context = RequestContext.extract(null);
     Long maxRepRecords = context.getApplicationConfiguration().getHarvesterConfiguration().getMaxRepRecords();
-    if (maxRepRecords < 0)
+    if (maxRepRecords < 0) {
       maxRepRecords = null;
+    }
     Long maxRepErrors = context.getApplicationConfiguration().getHarvesterConfiguration().getMaxRepErrors();
-    if (maxRepErrors < 0)
+    if (maxRepErrors < 0) {
       maxRepErrors = null;
+    }
 
     ExecutionUnitHelper helper = new ExecutionUnitHelper(unit);
     
@@ -258,10 +266,11 @@ class LocalDataProcessor implements DataProcessor {
    * @param record record to publish
    * @throws IOException if reading metadata fails
    * @throws SAXException if processing metadata fails
+   * @throws CatalogIndexException if operation on index fails
    * @throws TransformerException if processing metadata fails
    */
   @Override
-  public void onMetadata(ExecutionUnit unit, Publishable record) throws IOException, TransformerException, SAXException {
+  public void onMetadata(ExecutionUnit unit, Publishable record) throws IOException, SQLException, CatalogIndexException, TransformerConfigurationException {
     final ExecutionUnitHelper helper = new ExecutionUnitHelper(unit);
     
     // extract record information
@@ -308,7 +317,7 @@ class LocalDataProcessor implements DataProcessor {
           publicationRequest.getPublicationRecord().setAutoApprove(ProtocolInvoker.getAutoApprove(unit.getRepository().getProtocol()));
 
           // if this is a repository descriptor, update repository record
-          if (record instanceof Native) {
+          if (record instanceof Native && isRepositorySourceUri(sourceUri, unit.getRepository())) {
             String sMethod = MmdEnums.PublicationMethod.registration.toString();
             publicationRequest.getPublicationRecord().setUuid(unit.getRepository().getUuid());
             publicationRequest.getPublicationRecord().setPublicationMethod(sMethod);
@@ -327,6 +336,14 @@ class LocalDataProcessor implements DataProcessor {
 
           // create harvest report entry for the current record
           rp.createEntry(sourceUri.asString(), !bReplaced);
+        } catch (NullReferenceException ex) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, "[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri, ex);
+          } else {
+            LOGGER.finer("[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri + ", details: " + ex.getMessage());
+          }
+          rp.createInvalidEntry(sourceUri.asString(), Arrays.asList(new String[]{ex.getMessage()}));
+          listener.onPublishException(unit.getRepository(), sourceUri, metadata, ex);
         } catch (ValidationException ex) {
           if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.log(Level.FINEST, "[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri, ex);
@@ -361,7 +378,25 @@ class LocalDataProcessor implements DataProcessor {
           }
           rp.createUnpublishedEntry(sourceUri.asString(), Arrays.asList(new String[]{ex.getMessage()}));
           listener.onPublishException(unit.getRepository(), sourceUri, metadata, ex);
-        } catch (IOException ex) {
+        } catch (SAXException ex) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, "[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri, ex);
+          } else {
+            LOGGER.finer("[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri + ", details: " + ex.getMessage());
+          }
+          rp.createInvalidEntry(sourceUri.asString(), Arrays.asList(new String[]{ex.getMessage()}));
+          listener.onPublishException(unit.getRepository(), sourceUri, metadata, ex);
+        } catch (TransformerConfigurationException ex) {
+          throw ex;
+        } catch (TransformerException ex) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, "[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri, ex);
+          } else {
+            LOGGER.finer("[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri + ", details: " + ex.getMessage());
+          }
+          rp.createInvalidEntry(sourceUri.asString(), Arrays.asList(new String[]{ex.getMessage()}));
+          listener.onPublishException(unit.getRepository(), sourceUri, metadata, ex);
+        } catch (HttpClientException ex) {
           if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.log(Level.FINEST, "[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri, ex);
           } else {
@@ -371,9 +406,6 @@ class LocalDataProcessor implements DataProcessor {
           listener.onPublishException(unit.getRepository(), sourceUri, metadata, ex);
         }
       }
-    } catch (Exception ex) {
-      LOGGER.finer("[SYNCHRONIZER] FAILED processing metadata #" + (rp.getHarvestedCount() + 1) + " through: " + unit + ", source URI: " + sourceUri + ", details: " + ex.getMessage());
-      listener.onHarvestException(unit.getRepository(), sourceUri, ex);
     } finally {
       context.onExecutionPhaseCompleted();
     }
@@ -387,6 +419,12 @@ class LocalDataProcessor implements DataProcessor {
   @Override
   public void onIterationException(ExecutionUnit unit, Exception ex) {
     LOGGER.log(Level.SEVERE, "[SYNCHRONIZER] Iteration exception through: " + unit, ex);
+    unit.setCleanupFlag(false);
+    ExecutionUnitHelper helper = new ExecutionUnitHelper(unit);
+    ReportBuilder rp = helper.getReportBuilder();
+    if (rp!=null) {
+      rp.setException(ex);
+    }
     listener.onIterationException(unit.getRepository(), ex);
   }
 
@@ -500,7 +538,26 @@ class LocalDataProcessor implements DataProcessor {
       LOGGER.log(Level.SEVERE, "[SYNCHRONIZER] Error sending email notification", ex);
     }
   }
-
+  
+  /**
+   * Checks if a given sourceUri represents repository.
+   * @param sourceUri source URI to check
+   * @param record repository record
+   * @return 
+   */
+  private boolean isRepositorySourceUri(SourceUri sourceUri, HrRecord record) {
+    try {
+      URL recUrl = new URL(record.getHostUrl());
+      URL srcUrl = new URL(sourceUri.asString());
+      return recUrl.getProtocol().equalsIgnoreCase(srcUrl.getProtocol())
+              && recUrl.getHost().equalsIgnoreCase(srcUrl.getHost())
+              && recUrl.getPort() == srcUrl.getPort()
+              && recUrl.getPath().equalsIgnoreCase(srcUrl.getPath());
+    } catch (MalformedURLException ex) {
+      return false;
+    }
+  }
+  
   /**
    * Specialized adapter converting SourceUriArray iterator into
    * Map.Entry&lt;String, String&gt; iterator

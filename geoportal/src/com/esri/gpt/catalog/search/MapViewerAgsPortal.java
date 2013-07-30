@@ -61,9 +61,9 @@ public boolean canHandleResource() {
 }
 
 /**
- * Reads the add to map url
+ * Reads the add to map URL
  * 
- * @return
+ * @return 'Add To Map' URL
  */
 @Override
 public String readAddToMapUrl() {
@@ -98,7 +98,7 @@ public String readAddToMapUrl() {
 /**
  * Reads the html link target value
  * 
- * @return
+ * @return html link "target" value
  */
 @Override
 public String readTarget() {
@@ -126,7 +126,11 @@ private boolean isKmlOrKmz(String url) {
  */
 @Override
 public String readOpenDefaultMapViewerUrl() {
-  return this.getMapViewerConfigs().getUrl();
+	String s =  this.getMapViewerConfigs().getUrl();
+	//if(this.getUrlCanBeJscript() == true) {
+		s = "javascript:window.open('" + s + "')";
+	//}
+  return s;
 }
 
 }

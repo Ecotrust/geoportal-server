@@ -1,16 +1,14 @@
 package com.esri.gpt.control.georss;
 
 
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.esri.gpt.catalog.discovery.rest.RestQuery;
 import com.esri.gpt.catalog.search.SearchResult;
 import com.esri.gpt.catalog.search.SearchResultRecords;
 import com.esri.gpt.framework.context.RequestContext;
 import com.esri.gpt.framework.jsf.MessageBroker;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * The Class FeedWriter2.
@@ -147,15 +145,13 @@ public abstract void writeError(Throwable err);
 
 
 /**
- * Write the search result.  This will be used instead of
- * {@link FeedWriter#write(SearchResultRecords)} since the searchresultsRecords
- * can be extracted from {@link SearchResult}.
+ * Write the search result.
  *
  * @param result the result
  */
 @Override
 public  void write(SearchResult result) {
-  write(result.getRecords());
+  write(new SearchResultRecordsAdapter(result.getRecords()));
 }
 
 /**
